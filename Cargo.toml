@@ -15,3 +15,13 @@ tokio = { version = "1.5", features = ["macros", "rt-multi-thread"] }
 
 # For quick and easy discord alerts.
 reqwest = "0.11.10"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Hex encoding/decoding
+hex = "0.4"
+
+# Random number generation for Flashbots signer
+rand = "0.8"

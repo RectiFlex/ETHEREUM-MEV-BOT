@@ -5,6 +5,7 @@ pub mod dex;
 pub mod helpers;
 pub mod mempool;
 pub mod uni;
+pub mod strategy;
 
 use std::sync::Arc;
 
@@ -12,14 +13,14 @@ use address_book::*;
 use ethers::prelude::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
 use helpers::address;
+use strategy::StrategyManager;
 
 use crate::dex::Dex;
 use crate::helpers::setup_signer;
 
+#[derive(Debug)]
 pub struct Config {
-    #[allow(dead_code)]
     pub http: Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
-    #[allow(dead_code)]
     pub wss: Arc<Provider<Ws>>,
 }
 
@@ -42,21 +43,35 @@ impl Config {
     }
 }
 
-/// Run the strategy here.
+/// Run the MEV bot with advanced strategies
 pub async fn run() {
-    let config = Config::new().await;
-
-    // Example of how to interact with a contract.
+    println!("🚀 Starting MEV Bot - Jaredfromsubway Style");
+    
+    let config = Arc::new(Config::new().await);
+    
+    // Initialize strategy manager
+    let strategy_manager = Arc::new(StrategyManager::new(config.clone()).await);
+    
+    // Display configuration
+    println!("📊 Configuration:");
+    println!("   - Network RPC: {}", std::env::var("NETWORK_RPC").unwrap_or_default());
+    println!("   - Min Profit: 0.1 ETH");
+    println!("   - Strategies: Sandwich Attack, Cross-DEX Arbitrage");
+    println!("   - Bundle Submission: Flashbots");
+    
+    // Example of how to interact with a DEX (optional)
     let spooky_factory = address(SPOOKY_SWAP_FACTORY);
     let spooky_router = address(SPOOKY_SWAP_ROUTER);
     let dex = config.create_dex(spooky_factory, spooky_router).await;
     dex.get_pairs().await;
 
-    // Thread for checking what block we're on.
+    // Thread for checking what block we're on
+    let config_clone = config.clone();
     tokio::spawn(async move {
-        block_scanner::loop_blocks(Arc::clone(&config.http)).await;
+        block_scanner::loop_blocks(Arc::clone(&config_clone.http)).await;
     });
 
-    // Main loop to monitor the mempool.
-    mempool::loop_mempool(Arc::clone(&config.wss)).await;
+    // Main MEV monitoring loop with strategy execution
+    enhanced_mempool::enhanced_mempool_monitor(Arc::clone(&config.wss), strategy_manager).await;
 }
+pub mod enhanced_mempool;
