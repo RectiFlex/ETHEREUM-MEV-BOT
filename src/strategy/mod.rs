@@ -3,6 +3,7 @@ pub mod arbitrage;
 pub mod types;
 pub mod simulator;
 pub mod bundle;
+pub mod flashloan_balancer;
 
 use ethers::prelude::*;
 use std::sync::Arc;
@@ -19,6 +20,7 @@ pub use bundle::BundleBuilder;
 pub struct StrategyManager {
     sandwich: Arc<RwLock<SandwichStrategy>>,
     arbitrage: Arc<RwLock<ArbitrageStrategy>>,
+    flashloan: Arc<RwLock<FlashloanBalancerStrategy>>,
     simulator: Arc<TxSimulator>,
     bundle_builder: Arc<BundleBuilder>,
     config: Arc<Config>,
@@ -28,10 +30,11 @@ impl StrategyManager {
     pub async fn new(config: Arc<Config>) -> Self {
         let simulator = Arc::new(TxSimulator::new(config.http.clone()));
         let bundle_builder = Arc::new(BundleBuilder::new(config.http.clone()));
-        
+
         Self {
             sandwich: Arc::new(RwLock::new(SandwichStrategy::new(config.clone()))),
             arbitrage: Arc::new(RwLock::new(ArbitrageStrategy::new(config.clone()))),
+            flashloan: Arc::new(RwLock::new(FlashloanBalancerStrategy::new(config.clone()))),
             simulator,
             bundle_builder,
             config,
@@ -44,14 +47,17 @@ impl StrategyManager {
         // Run strategies in parallel
         let sandwich_lock = self.sandwich.read().await;
         let arb_lock = self.arbitrage.read().await;
-        
-        let (sandwich_ops, arb_ops) = tokio::join!(
+        let flashloan_lock = self.flashloan.read().await;
+
+        let (sandwich_ops, arb_ops, flash_ops) = tokio::join!(
             sandwich_lock.analyze(tx),
-            arb_lock.analyze(tx)
+            arb_lock.analyze(tx),
+            flashloan_lock.analyze(tx)
         );
 
         opportunities.extend(sandwich_ops);
         opportunities.extend(arb_ops);
+        opportunities.extend(flash_ops);
 
         // Simulate and filter profitable opportunities
         let mut profitable_ops = Vec::new();
@@ -94,6 +100,7 @@ pub mod advanced_features;
 
 pub use enhanced_sandwich::EnhancedSandwichStrategy;
 pub use advanced_features::AdvancedMEVFeatures;
+pub use flashloan_balancer::FlashloanBalancerStrategy;
 
 impl StrategyManager {
     pub fn config(&self) -> Arc<Config> {
