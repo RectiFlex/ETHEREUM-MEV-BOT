@@ -1,5 +1,4 @@
 use ethers::prelude::*;
-use ethers::types::transaction::eip2718::TypedTransaction;
 use std::sync::Arc;
 use crate::Config;
 

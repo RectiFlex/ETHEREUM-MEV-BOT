@@ -1,5 +1,3 @@
-use ethers::types::transaction::eip2718::TypedTransaction;
-
 use std::sync::Arc;
 use std::collections::HashMap;
 use tokio::sync::Mutex;

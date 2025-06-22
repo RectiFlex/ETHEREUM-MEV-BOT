@@ -1,22 +1,15 @@
-use std::error::Error;
-use log::{info, error};
-
-mod logger;
+use mev_template::run;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() {
     dotenv::dotenv().ok();
 
     // Initialize logger
-    logger::init()?;
+    env_logger::init();
 
-    info!("Starting the bot...");
+    println!("Starting the MEV bot...");
 
-    if let Err(e) = run().await {
-        error!("Bot encountered an error: {}", e);
-        return Err(Box::new(e));
-    }
+    run().await;
 
-    info!("Bot stopped.");
-    Ok(())
+    println!("Bot stopped.");
 }

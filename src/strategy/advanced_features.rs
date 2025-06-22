@@ -183,7 +183,7 @@ impl AdvancedMEVFeatures {
         // Implement path profit calculation
         Some(ArbitragePath {
             path: path.to_vec(),
-            dexes: vec![DexType::UniswapV2; path.saturating_sub(1)],
+            dexes: vec![DexType::UniswapV2; path.len().saturating_sub(1)],
             expected_profit: U256::from(10).pow(U256::from(17)), // Placeholder
             gas_estimate: 300_000u64.saturating_mul(path.len() as u64),
         })
